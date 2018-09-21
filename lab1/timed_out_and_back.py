@@ -23,11 +23,15 @@
 """
 
 import rospy
+import thread
+import os
+import time
 from geometry_msgs.msg import Twist
 from math import pi
 
 class OutAndBack():
     def __init__(self):
+
         # Give the node a name
         rospy.init_node('out_and_back', anonymous=False)
 
@@ -43,25 +47,28 @@ class OutAndBack():
         # Set the equivalent ROS rate variable
         r = rospy.Rate(rate)
         
-        # Set the forward linear speed to 0.2 meters per second 
+        # Set the forward linear speed to 0 meters per second 
         linear_speed = 0.0
         
-        # Set the travel distance to 1.0 meters
+        # Set the travel distance to 0.0 meters
         goal_distance = 0.0
         
         
-        # Set the rotation speed to 1.0 radians per second
+        # Set the rotation speed to 0 radians per second
         angular_speed = 0.0
         
-        # Set the rotation angle to Pi radians (180 degrees)
+        # Set the rotation angle to 0 radians 
         goal_angle = 0
         
+	T = 'T'
+	Q = 'Q'
+	R = 'R'
 
 	opt = ''
 
         while opt != 'Q':
         
-		opt = input("Input T for translation, R for rotation or Q for quit:")
+		opt = input("Input T for translation, R for rotation or Q for quit: ")
 
 		if(opt == 'Q'):
 			break
@@ -71,50 +78,48 @@ class OutAndBack():
 
 		if(opt == 'T'):
 
-			goal_distance = float(input("Input the distance to translate:"))
+			goal_distance = float(input("Input the distance to translate: "))
 			goal_angle = 0
 
-			# Set the forward speed
+			# Set the linear speed
 			if(goal_distance <0):
 				linear_speed = -0.2
 			else:
 				linear_speed = 0.2
 			move_cmd.linear.x = linear_speed
 			linear_duration = goal_distance / linear_speed
-			print(linear_duration)
-			# Move forward for a time to go the desired distance
+			# Move for a time to go the desired distance
 			ticks = int(linear_duration * rate)
 			    
 			for t in range(ticks):
 				self.cmd_vel.publish(move_cmd)
 				r.sleep()
 		    
-             		# Stop the robot before the rotation
+             		# Stop the robot 
             		move_cmd = Twist()
             		self.cmd_vel.publish(move_cmd)
             		rospy.sleep(1) 
 
 		if(opt == 'R'):
 
-			goal_angle = float(input("Input the angle to translate:"))
+			goal_angle = float(input("Input the angle to translate in radians: "))
 			goal_distance = 0
 
-			# Set the forward speed
+			# Set the angular speed
 			if(goal_angle <0):
 				angular_speed = -2
 			else:
 				angular_speed = 2
 			move_cmd.angular.z = angular_speed
 			angular_duration = goal_angle / angular_speed
-			print(angular_duration)
-			# Move forward for a time to go the desired distance
+			# Move for a time to turn to the desired angle
 			ticks = int(angular_duration * rate)
 			    
 			for t in range(ticks):
 				self.cmd_vel.publish(move_cmd)
 				r.sleep()
 		    
-             		# Stop the robot before the rotation
+             		# Stop the robot 
             		move_cmd = Twist()
             		self.cmd_vel.publish(move_cmd)
             		rospy.sleep(1) 
@@ -131,7 +136,11 @@ class OutAndBack():
  
 if __name__ == '__main__':
     try:
-        OutAndBack()
+        os.system('roslaunch rbx1_bringup fake_turtlebot.launch &')
+	time.sleep(5)
+        os.system('rosrun rviz rviz -d `rospack find rbx1_nav`/sim.rviz &')
+	time.sleep(5)
+	OutAndBack()
     except:
         rospy.loginfo("Out-and-Back node terminated.")
 
