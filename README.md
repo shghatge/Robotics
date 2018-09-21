@@ -11,3 +11,7 @@ python timed_out_and_back.py
 
 #### Method ####
 
+1) shutdown(self) - is a function which shutdowns the system and stops the robot.
+2) OutAndBack() - The constructor of this class has a loop which prompts the user for Input to rotate or translate or quit, along with the values. 
+3) main - The initial function where the scripts starts executing.
+
