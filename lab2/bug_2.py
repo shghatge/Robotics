@@ -41,7 +41,7 @@ def scan_callback(msg):
 
 
 
-def get_odom():
+def get_odom_pos():
     try:
         trans, rot = tf_listener.lookupTransform( odom_frame, base_frame, rospy.Time(0) )
     except  (tf.Exception,  tf.ConnectivityException,  tf.LookupException):
@@ -49,7 +49,17 @@ def get_odom():
         return
 
     print("Positions "+str(trans[0])+" "+str(trans[1]))
-    return  Point(trans[0], trans[1], trans[2]), quat_to_angle(Quaternion(*rot))
+    return Point(trans[0], trans[1], trans[2])
+
+def get_odom_pose():
+    try:
+        trans, rot = tf_listener.lookupTransform( odom_frame, base_frame, rospy.Time(0) )
+    except  (tf.Exception,  tf.ConnectivityException,  tf.LookupException):
+        rospy.loginfo( "TF Exception" )
+        return
+
+    print("Poses "+str(quat_to_angle(Quaternion(*rot))))
+    return quat_to_angle(Quaternion(*rot))
 
 # def odom_callback(odom_data):
 #     # print("Inside Odometry callback")
@@ -73,11 +83,11 @@ def translate_robot(distance):
     move_cmd = Twist()
     cmd_vel.publish(move_cmd)
     rospy.sleep(1) 
-    robot_pos, robot_pose = get_odom()
-    print(robot_pose)
+    robot_pos = get_odom_pos()
+    print(robot_pos)
 
 def rotate_robot(angle, direction):
-    global rate, angle_turned
+    global rate, angle_turned, robot_pose
 
     #angle_turned += ((direction) * angle)
     print("Rotating by angle "+str(angle))
@@ -94,7 +104,8 @@ def rotate_robot(angle, direction):
     # Stop the robot 
     move_cmd = Twist()
     cmd_vel.publish(move_cmd)
-    rospy.sleep(1)  
+    robot_pose = get_odom_pose()
+    print(robot_pose)
 
 def isGoalReached():
     val = True
@@ -177,8 +188,8 @@ right_range = 9999
 translate_speed = 0.2
 hit_point = None
 impossible = False
-robot_pose = None
-robot_pos = Point(0, 0, 0)
+robot_pose = 0.0
+robot_pos = Point(0.0, 0.0, 0.0)
 
 ros_rate = 50
 
