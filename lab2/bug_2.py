@@ -7,7 +7,7 @@ from nav_msgs.msg import Odometry
 
 # Callback function copies the distance of obstacle right in front and at the right most angle of view
 def scan_callback(msg):
-    print("Inside LaserScan callback")
+    # print("Inside LaserScan callback")
     global front_range, right_range 
     front_range = msg.ranges[ len( msg.ranges ) / 2 ]
     right_range = msg.ranges[-1]
@@ -23,7 +23,7 @@ def get_odom():
     return  Point(trans[0], trans[1], trans[2]), rot
 
 def odom_callback(odom_data):
-    print("Inside Odometry callback")
+    # print("Inside Odometry callback")
     global robot_pos, robot_pose 
     robot_pos = odom_data.pose.pose.position
     robot_pose = odom_data.pose.pose.orientation
@@ -69,3 +69,4 @@ except(tf.Exception,  tf.ConnectivityException,  tf.LookupException):
 while (isGoalReached() == False):
     robot_pos, robot_pose = get_odom()
     print("Position "+str(robot_pos.x)+", "+str(robot_pos.y)+", "+str(robot_pos.z))
+    time.sleep(1)
