@@ -164,7 +164,7 @@ def follow_wall():
             rotate_robot(1, -1)
 
         if( right_range < 0.8):
-            rotate_robot(1, 1)
+            rotate_robot(0.5, 1)
 
         if (is_m_line() == True ):
 	    print("M line is hit, should turn "+str(robot_pose))

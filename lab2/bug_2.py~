@@ -121,7 +121,7 @@ def is_m_line():
     val = False
     print("M_Line Check : Pos "+str(robot_pos.x)+" "+str(robot_pos.y))
 
-    if ( (robot_pos.y >= -0.1) and (robot_pos.y <= 0.1) ):
+    if ( (robot_pos.y >= -0.1) and (robot_pos.y <= 0.1) and robot_pos.x <=10.0):
 	if(robot_pos.x > hit_point.x):
 	    val = True
     	    print("M_Line Check is Hit: Pos "+str(robot_pos.x)+" "+str(robot_pos.y))
