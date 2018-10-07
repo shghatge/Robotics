@@ -109,11 +109,11 @@ def rotate_robot(angle, direction):
 
 def isGoalReached():
     val = True
-    if ( (robot_pos.x < 9.9) or (robot_pos.x > 10.1) ):
+    if ( (robot_pos.x < 9.8) or (robot_pos.x > 10.2) ):
         val = False
-    if ( (robot_pos.y < -0.1) or (robot_pos.y > 0.1) ):
+    if ( (robot_pos.y < -0.2) or (robot_pos.y > 0.2) ):
         val = False
-    if ( (robot_pos.z < -0.1) or (robot_pos.z > 0.1) ):
+    if ( (robot_pos.z < -0.2) or (robot_pos.z > 0.2) ):
         val = False
     return val
 
@@ -131,7 +131,7 @@ def is_m_line():
 def is_hit_point():
     val = False
 
-    if ( abs(robot_pos.y - hit_point.y) <= 0.2 and abs(robot_pos.x - hit_point.x) < 0.05):
+    if ( abs(robot_pos.y - hit_point.y) <= 0.1 and abs(robot_pos.x - hit_point.x) <= 0.6):
         val = True
 	print("HitPoint Check is Hit: Pos "+str(robot_pos.x)+" "+str(robot_pos.y))
 
@@ -142,7 +142,7 @@ def isObstacleAhead():
     if( math.isnan(front_range) == True):
         return False
 
-    if (front_range > 1.0):
+    if (front_range > 0.6):
         return False
 
     return True
@@ -174,7 +174,7 @@ def follow_wall():
 		rotate_robot(abs(robot_pose), -1)
 	    break
 
-        if (is_hit_point() == True):
+        elif (is_hit_point() == True):
             impossible = True
 	    break
 
@@ -228,7 +228,7 @@ while (isGoalReached() == False):
 	print("Obstace not ahead")
         translate_robot(translate_speed)
     else:
-        hit_point = robot_pos
+        hit_point = robot_pos 
         hit_point.x = hit_point.x + front_range
         print(" Ranges "+str(front_range) +" "+str(right_range))
         print("Obstacle Hit, Hit Point "+str(hit_point.x)+" "+str(hit_point.y))
