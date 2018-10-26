@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 from __future__ import division
 import rospy
+import math
+import time
 from scipy.spatial import ConvexHull
 import numpy as np
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Quaternion, Pose, Point, Vector3
+from geometry_msgs.msg import Twist,  Point,  Quaternion
 from std_msgs.msg import Header, ColorRGBA
 import itertools
 from collections import defaultdict
@@ -113,11 +116,160 @@ def collision_detect(p1,p2,p3,p4):
 		return True
 	return False
 
+def djks(graph, start, end):
+	visited = []
+	unvisited = graph.keys()
+	distance = []
+	path = [None]*len(graph.keys())
+	
+	for i in unvisited:
+		distance.append(float('inf'))
+
+	distance[start] = 0
+	
+	while len(unvisited):
+
+		curr_node = None
+		min_ = float('inf')
+		
+		for i in unvisited:
+			if( distance[i] < min_):
+				curr_node = i
+		
+		visited.append(curr_node)
+		unvisited.remove(curr_node)
+		adj = graph[curr_node].keys()
+		
+		index = 0
+		for i in adj:
+			if( distance[i] > ( distance[visited[-1]] + graph[curr_node][i]) ):
+				distance[i] = distance[visited[-1]] + graph[curr_node][i]
+				path[i] = visited[-1]
+
+		index += 1
+	return path
+
+
+def distance (pt0, pt1):
+	return math.sqrt( ( pt0[0] - pt1[0] ) ** 2 + ( pt0[1] - pt1[1] ) ** 2 )
+
+def get_shortest_path(relevant_segments, start, end):
+	# print(relevant_segments)
+
+	graph = {}
+	vertices = {}
+	vertices[ (0, 0) ] = 0
+	index = 1
+
+	for i in relevant_segments:
+		if not ( tuple(i[0]) in vertices):
+			vertices [ tuple(i[0]) ] = index
+			index += 1
+
+		if not ( tuple(i[1]) in vertices):
+			vertices [ tuple(i[1]) ] = index
+			index += 1
+	# print(vertices)
+
+	for i in vertices:
+		graph [vertices [i]] = {}
+
+	for i in relevant_segments:
+		#  i is a tuple of two lists where each list in it is a point
+		# print("iterating "+str(vertices[tuple(i[0])]) + " "+str(vertices[tuple(i[1])]))
+		graph [ vertices[tuple(i[0])] ] [ vertices[tuple(i[1])] ] = distance ( i[0], i[1] )
+
+
+	# print( djks(graph, 0, 20) )
+	print ("start and end pts are " + str(vertices [ tuple(start) ]) + " " + str(vertices [ tuple(end) ]))
+	return vertices, djks(graph, vertices [ tuple(start) ], vertices [ tuple(end) ])
+
+def get_path_in_points(path, vertices, start, end):
+
+	point_path = []
+
+	curr = vertices[end]
+	start = vertices[start]
+	
+	while curr != start:
+
+		for x,y in vertices.iteritems():
+			if y == curr:
+				point_path = [x] + point_path
+				break
+
+		curr = path[ curr ]
+		
+	point_path = [(0,0)] + point_path
+	return point_path
+
+def getDist(pt1, pt2):
+
+	distance = math.sqrt( ( pt1[0] - pt2[0] ) ** 2 + ( pt1[1] - pt2[1] ) ** 2) 
+	return distance
+
+def getAngle(pt1, pt2):
+
+	if( ( pt1[0] - pt2[0] ) == 0):
+		angle = math.pi / 2
+	else:
+		angle = math.atan( ( pt1[1] - pt2[1] ) / ( pt1[0] - pt2[0] ) );
+
+	return angle
+
+def translate_robot(distance):
+    global rate, ros_rate
+    move_cmd = Twist()
+    move_cmd.linear.x = 0.2
+    linear_duration = distance / 0.2
+    # Move for a time to go the desired distance
+    ticks = int(linear_duration * ros_rate)
+
+    for t in range(ticks):
+        cmd_vel.publish(move_cmd)
+        rate.sleep()
+	move_cmd = Twist()
+    cmd_vel.publish(move_cmd)
+    rospy.sleep(1) 
+    
+
+def rotate_robot(angle):
+	global rate, ros_rate
+	print("Rotating by angle "+str(angle))
+	move_cmd = Twist()
+	move_cmd.angular.z =  1
+	angular_duration = angle / 1
+	# Move for a time to turn to the desired angle
+	ticks = int(angular_duration * ros_rate)
+
+	for t in range(ticks):
+		cmd_vel.publish(move_cmd)
+		rate.sleep()
+
+	# Stop the robot 
+	move_cmd = Twist()
+	cmd_vel.publish(move_cmd)
+    
+def move_robot(points):
+
+	for i in range( len(points) - 1 ):
+		angle = getAngle( points[i], points[ i+1 ] )
+		rotate_robot(angle)
+		dist = getDist(points[i], points[ i+1 ])
+		translate_robot(dist)
+
+
+
+
 marker_publisher = rospy.Publisher('visualization_marker', Marker, queue_size=500)
-# if __name__ == "__main__":
+cmd_vel = rospy.Publisher('/cmd_vel_mux/input/navi', Twist, queue_size = 2)
 
 rospy.init_node('convex_hull', anonymous = False)
-rospy.sleep(0.5)                                                             
+rospy.sleep(0.5)                                 
+
+ros_rate = 50
+rate = rospy.Rate(ros_rate)
+                            
 obstacles = load_obstacles("../data/world_obstacles.txt")
 goal = load_goal("../data/goal.txt")
 print("goal", goal)
@@ -171,7 +323,7 @@ for k in range(0 , len(obstacles)):
 				for v in vertices_hull[t]:
 					all_segments.append(([x[0]/100,x[1]/100],[v[0]/100,v[1]/100]))
 
-relevant_segments = []
+relevant_segments = list()
 for seg in all_segments:
 	add = True
 	for edge in edges_hull:
@@ -182,4 +334,14 @@ for seg in all_segments:
 for edge in edges_hull:
 	relevant_segments.append(edge)
 publish_lines(relevant_segments)
-rospy.sleep(1)  
+
+start_pt = [0, 0]
+goal_pt = [float (goal[0]) / 100.0, float (goal[1]) / 100.0]
+
+vertices, path = get_shortest_path(relevant_segments, start_pt, goal_pt)
+
+path_points = get_path_in_points(path, vertices, tuple(start_pt), tuple(goal_pt))
+
+move_robot(path_points)
+
+rospy.sleep(1)
