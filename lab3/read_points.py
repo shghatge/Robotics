@@ -3,6 +3,7 @@ from __future__ import division
 import rospy
 import math
 import time
+import tf
 from scipy.spatial import ConvexHull
 import numpy as np
 from visualization_msgs.msg import Marker
@@ -134,6 +135,7 @@ def djks(graph, start, end):
 		
 		for i in unvisited:
 			if( distance[i] < min_):
+				min_ = distance[i]
 				curr_node = i
 		
 		visited.append(curr_node)
@@ -147,6 +149,10 @@ def djks(graph, start, end):
 				path[i] = visited[-1]
 
 		index += 1
+
+	print("distances from djks")
+	print(distance)
+	
 	return path
 
 
@@ -219,26 +225,32 @@ def getAngle(pt1, pt2):
 
 def translate_robot(distance):
     global rate, ros_rate
+    print("Translating the robot by "+str(distance))
     move_cmd = Twist()
-    move_cmd.linear.x = 0.2
-    linear_duration = distance / 0.2
+    move_cmd.linear.x = 1.0
+    linear_duration = distance / 1.0
+
+    print("Speed "+str(move_cmd.linear.x)+" dur "+str(linear_duration))
     # Move for a time to go the desired distance
     ticks = int(linear_duration * ros_rate)
 
     for t in range(ticks):
         cmd_vel.publish(move_cmd)
         rate.sleep()
+
 	move_cmd = Twist()
     cmd_vel.publish(move_cmd)
-    rospy.sleep(1) 
+    rospy.sleep(1)
     
 
 def rotate_robot(angle):
 	global rate, ros_rate
 	print("Rotating by angle "+str(angle))
 	move_cmd = Twist()
-	move_cmd.angular.z =  1
-	angular_duration = angle / 1
+	move_cmd.angular.z =  1.0
+	angular_duration = angle / 1.0
+
+	print("Speed "+str(move_cmd.angular.z)+" dur "+str(angular_duration))
 	# Move for a time to turn to the desired angle
 	ticks = int(angular_duration * ros_rate)
 
@@ -252,23 +264,41 @@ def rotate_robot(angle):
     
 def move_robot(points):
 
+	total_dist = 0
 	for i in range( len(points) - 1 ):
 		angle = getAngle( points[i], points[ i+1 ] )
 		rotate_robot(angle)
 		dist = getDist(points[i], points[ i+1 ])
+		total_dist += dist
 		translate_robot(dist)
-
-
+	print("dist travelled")
+	print(str(total_dist))
 
 
 marker_publisher = rospy.Publisher('visualization_marker', Marker, queue_size=500)
-cmd_vel = rospy.Publisher('/cmd_vel_mux/input/navi', Twist, queue_size = 2)
-
 rospy.init_node('convex_hull', anonymous = False)
-rospy.sleep(0.5)                                 
-
+rospy.sleep(0.5)
 ros_rate = 50
+
+################################
+tf_listener  =  tf.TransformListener()
+odom_frame  =  '/odom'
+
+#Subscribe to scan and odomotry and publish cmd_vel
+
+# cmd_vel = rospy.Publisher('/cmd_vel_mux/input/navi', Twist, queue_size = 2)
+cmd_vel = rospy.Publisher('/cmd_vel', Twist, queue_size=2)
 rate = rospy.Rate(ros_rate)
+
+# try:
+#     tf_listener.waitForTransform( odom_frame,  '/odom' ,  rospy.Time(),  rospy.Duration( 1.0 ))
+#     base_frame  =  '/odom'
+# except(tf.Exception,  tf.ConnectivityException,  tf.LookupException):
+#     rospy.loginfo( "Cannot find transform between /odom and /base_link or /base_footprint" )
+#     rospy.signal_shutdown( "tf Exception" )
+
+################################
+
                             
 obstacles = load_obstacles("../data/world_obstacles.txt")
 goal = load_goal("../data/goal.txt")
@@ -341,6 +371,8 @@ goal_pt = [float (goal[0]) / 100.0, float (goal[1]) / 100.0]
 vertices, path = get_shortest_path(relevant_segments, start_pt, goal_pt)
 
 path_points = get_path_in_points(path, vertices, tuple(start_pt), tuple(goal_pt))
+
+print(path_points)
 
 move_robot(path_points)
 
