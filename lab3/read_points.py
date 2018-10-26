@@ -86,12 +86,16 @@ def publish_lines(all_segments):
     	line_strips.points.append(Point(s[0][0], s[0][1], 0))
      	line_strips.points.append(Point(s[1][0], s[1][1], 0))  	
     	line_strips.lifetime = rospy.Duration()
-    	marker_publisher.publish(line_strips)	
+    	marker_publisher.publish(line_strips)
+    	rospy.sleep(0.005)
     print(ns)  
         # publish points
 
 def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
     return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+
+def pointIsClose(p1, p2):
+	return isclose(p1[0],p2[0]) and isclose(p1[1],p2[1])
 
 def collision_detect(p1,p2,p3,p4):
 	s1 = [p2[0]-p1[0], p2[1]-p1[1]]
@@ -104,12 +108,12 @@ def collision_detect(p1,p2,p3,p4):
 	if(s >= 0 and s<=1 and t>=0 and t<=1):
 		x = p1[0] + (t * s1[0])
 		y = p1[1] + (t * s1[1])
-		if([x,y] == p3 or [x,y] == p4):
+		if(pointIsClose([x,y],p3) or pointIsClose([x,y],p4) ):
 			return False
 		return True
 	return False
 
-marker_publisher = rospy.Publisher('visualization_marker', Marker, queue_size=100)
+marker_publisher = rospy.Publisher('visualization_marker', Marker, queue_size=500)
 # if __name__ == "__main__":
 
 rospy.init_node('convex_hull', anonymous = False)
@@ -155,15 +159,17 @@ for obstacle in grown_obstacles:
 		edges_hull.append((pts[j],pts[(j+1)%(l)]))
 rospy.sleep(1)  
 all_segments = []
+all_segments.append(([0,0],[int(goal[0])/100,int(goal[1])/100]))
 for k in range(0 , len(obstacles)):
 	for x in vertices_hull[k]:
 		all_segments.append(([0,0],[x[0]/100,x[1]/100]))
 	for x in vertices_hull[k]:
 		all_segments.append(([x[0]/100,x[1]/100],[int(goal[0])/100,int(goal[1])/100]))
 	for x in vertices_hull[k]:
-		for t in range(k+1, len(obstacles)):
-			for v in vertices_hull[t]:
-				all_segments.append(([x[0]/100,x[1]/100],[v[0]/100,v[1]/100]))
+		for t in range(0, len(obstacles)):
+			if k != t :
+				for v in vertices_hull[t]:
+					all_segments.append(([x[0]/100,x[1]/100],[v[0]/100,v[1]/100]))
 
 relevant_segments = []
 for seg in all_segments:
