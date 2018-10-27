@@ -5,6 +5,8 @@ It also contains the pathPlan.py script file which has to be run to navigate the
 Please find the link to the youtuve video below.
 https://www.youtube.com/watch?v=fhZ7lMqVHVQ
 
+NOTE : We are publishing the markers to 'visualization_marker' topic.
+
 These are the commands to execute the script.
 
 1) Run 'roscore' in a terminal.
