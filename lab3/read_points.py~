@@ -6,7 +6,6 @@ import time
 import tf
 from scipy.spatial import ConvexHull
 import numpy as np
-from rbx1_nav.transform_utils import quat_to_angle, normalize_angle
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Quaternion, Pose, Point, Vector3
 from geometry_msgs.msg import Twist,  Point,  Quaternion
@@ -201,7 +200,6 @@ def get_shortest_path(relevant_segments, start, end):
 		#  i is a tuple of two lists where each list in it is a point
 		# print("iterating "+str(vertices[tuple(i[0])]) + " "+str(vertices[tuple(i[1])]))
 		graph [ vertices[tuple(i[0])] ] [ vertices[tuple(i[1])] ] = distance ( i[0], i[1] )
-		graph [ vertices[tuple(i[1])] ] [ vertices[tuple(i[0])] ] = distance ( i[0], i[1] )
 
 
 	# print( djks(graph, 0, 20) )
@@ -241,42 +239,14 @@ def getAngle(pt1, pt2):
 
 	return angle
 
-#callback function to get the current position and pose of the robot
-
-
-
-def get_odom_pos():
-    try:
-        trans, rot = tf_listener.lookupTransform( odom_frame, base_frame, rospy.Time(0) )
-    except  (tf.Exception,  tf.ConnectivityException,  tf.LookupException):
-        rospy.loginfo( "TF Exception" )
-        return
-
-    print("Positions "+str(trans[0])+" "+str(trans[1]))
-    return Point(trans[0], trans[1], trans[2])
-
-def get_odom_pose():
-    try:
-        trans, rot = tf_listener.lookupTransform( odom_frame, base_frame, rospy.Time(0) )
-    except  (tf.Exception,  tf.ConnectivityException,  tf.LookupException):
-        rospy.loginfo( "TF Exception" )
-        return
-
-    print("Poses "+str(quat_to_angle(Quaternion(*rot))))
-    return quat_to_angle(Quaternion(*rot))
-
-# def odom_callback(odom_data):
-#     # print("Inside Odometry callback")
-#     global robot_pos, robot_pose 
-#     robot_pos = odom_data.pose.pose.position
-#     robot_pose = odom_data.pose.pose.orientation
-
 def translate_robot(distance):
-    global rate, robot_pos
-
+    global rate, ros_rate
+    print("Translating the robot by "+str(distance))
     move_cmd = Twist()
-    move_cmd.linear.x = 0.2
-    linear_duration = distance / 0.2
+    move_cmd.linear.x = 1.0
+    linear_duration = distance / 1.0
+
+    print("Speed "+str(move_cmd.linear.x)+" dur "+str(linear_duration))
     # Move for a time to go the desired distance
     ticks = int(linear_duration * ros_rate)
 
@@ -284,46 +254,41 @@ def translate_robot(distance):
         cmd_vel.publish(move_cmd)
         rate.sleep()
 
-    move_cmd = Twist()
+	move_cmd = Twist()
     cmd_vel.publish(move_cmd)
-    rospy.sleep(0.25) 
+    rospy.sleep(1)
+    
 
+def rotate_robot(angle):
+	global rate, ros_rate
+	print("Rotating by angle "+str(angle))
+	move_cmd = Twist()
+	move_cmd.angular.z =  1.0
+	angular_duration = angle / 1.0
 
-def rotate_robot(angle, direction):
-    global rate, angle_turned
+	print("Speed "+str(move_cmd.angular.z)+" dur "+str(angular_duration))
+	# Move for a time to turn to the desired angle
+	ticks = int(angular_duration * ros_rate)
 
-    print("Rotating by angle "+str(angle))
-    move_cmd = Twist()
-    move_cmd.angular.z = direction * 0.05
-    angular_duration = angle / 0.05
-    # Move for a time to turn to the desired angle
-    ticks = int(angular_duration * ros_rate)
+	for t in range(ticks):
+		cmd_vel.publish(move_cmd)
+		rate.sleep()
 
-    for t in range(ticks):
-        cmd_vel.publish(move_cmd)
-        rate.sleep()
-
-    # Stop the robot 
-    move_cmd = Twist()
-    cmd_vel.publish(move_cmd)
-    rospy.sleep(0.25) 
-
+	# Stop the robot 
+	move_cmd = Twist()
+	cmd_vel.publish(move_cmd)
     
 def move_robot(points):
 
 	total_dist = 0
 	for i in range( len(points) - 1 ):
 		angle = getAngle( points[i], points[ i+1 ] )
-		print("angle is "+str(angle))
-		sign = 1
-		if(angle<0): 
-			sign = -1
-		rotate_robot(abs(angle), sign)
-		# rospy.sleep(0.1)
+		rotate_robot(angle)
 		dist = getDist(points[i], points[ i+1 ])
 		total_dist += dist
 		translate_robot(dist)
-		rotate_robot(abs(angle), -1 * sign)
+	print("dist travelled")
+	print(str(total_dist))
 
 
 marker_publisher = rospy.Publisher('visualization_marker', Marker, queue_size=500)
@@ -337,16 +302,16 @@ odom_frame  =  '/odom'
 
 #Subscribe to scan and odomotry and publish cmd_vel
 
-cmd_vel = rospy.Publisher('/cmd_vel', Twist, queue_size = 2)
-#cmd_vel = rospy.Publisher('/cmd_vel', Twist, queue_size=2)
+# cmd_vel = rospy.Publisher('/cmd_vel_mux/input/navi', Twist, queue_size = 2)
+cmd_vel = rospy.Publisher('/cmd_vel', Twist, queue_size=2)
 rate = rospy.Rate(ros_rate)
 
-try:
-    tf_listener.waitForTransform( odom_frame,  '/base_footprint' ,  rospy.Time(),  rospy.Duration( 1.0 ))
-    base_frame  =  '/base_footprint'
-except(tf.Exception,  tf.ConnectivityException,  tf.LookupException):
-    rospy.loginfo( "Cannot find transform between /odom and /base_link or /base_footprint" )
-    rospy.signal_shutdown( "tf Exception" )
+# try:
+#     tf_listener.waitForTransform( odom_frame,  '/odom' ,  rospy.Time(),  rospy.Duration( 1.0 ))
+#     base_frame  =  '/odom'
+# except(tf.Exception,  tf.ConnectivityException,  tf.LookupException):
+#     rospy.loginfo( "Cannot find transform between /odom and /base_link or /base_footprint" )
+#     rospy.signal_shutdown( "tf Exception" )
 
 ################################
 
@@ -359,12 +324,6 @@ i=0;
 allpoints = list()
 allpoints.append(goal)
 allpoints.append([0,0])
-edges_obs = list()
-for obs in obstacles:
-	l = len(obs)
-	for j in range(len(obs)):
-		edges_obs.append(([obs[j][0]/100, obs[j][1]/100],[obs[(j+1)%l][0]/100, obs[(j+1)%l][1]/100]))
-
 for obs in obstacles:
 	grown_obstacle = []
 	points = []
@@ -416,21 +375,10 @@ for seg in all_segments:
 	for edge in edges_hull:
 		if collision_detect(seg[0], seg[1], edge[0], edge[1]) == True :
 			add = False
-	for edge in edges_obs:
-		if collision_detect(seg[0], seg[1], edge[0], edge[1]) == True :
-			add = False
 	if add :
 		relevant_segments.append(seg)
 for edge in edges_hull:
-	add = True
-	for edge2 in edges_hull:
-		if collision_detect(edge[0], edge[1], edge2[0], edge2[1]) == True :
-			add = False
-	for edge2 in edges_obs:
-		if collision_detect(edge[0], edge[1], edge2[0], edge2[1]) == True :
-			add = False
-	if add :
-		relevant_segments.append(edge)
+	relevant_segments.append(edge)
 publish_lines(relevant_segments)
 
 start_pt = [0, 0]
@@ -445,4 +393,3 @@ pub_path(path_points)
 move_robot(path_points)
 
 rospy.sleep(1)
-
