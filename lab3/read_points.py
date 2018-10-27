@@ -165,11 +165,7 @@ def djks(graph, start, end):
 				distance[i] = distance[visited[-1]] + graph[curr_node][i]
 				path[i] = visited[-1]
 
-		index += 1
-
-	print("distances from djks")
-	print(distance)
-	
+		index += 1	
 	return path
 
 
@@ -177,7 +173,6 @@ def distance (pt0, pt1):
 	return math.sqrt( ( pt0[0] - pt1[0] ) ** 2 + ( pt0[1] - pt1[1] ) ** 2 )
 
 def get_shortest_path(relevant_segments, start, end):
-	# print(relevant_segments)
 
 	graph = {}
 	vertices = {}
@@ -192,20 +187,15 @@ def get_shortest_path(relevant_segments, start, end):
 		if not ( tuple(i[1]) in vertices):
 			vertices [ tuple(i[1]) ] = index
 			index += 1
-	# print(vertices)
 
 	for i in vertices:
 		graph [vertices [i]] = {}
 
 	for i in relevant_segments:
 		#  i is a tuple of two lists where each list in it is a point
-		# print("iterating "+str(vertices[tuple(i[0])]) + " "+str(vertices[tuple(i[1])]))
 		graph [ vertices[tuple(i[0])] ] [ vertices[tuple(i[1])] ] = distance ( i[0], i[1] )
 		graph [ vertices[tuple(i[1])] ] [ vertices[tuple(i[0])] ] = distance ( i[0], i[1] )
 
-
-	# print( djks(graph, 0, 20) )
-	print ("start and end pts are " + str(vertices [ tuple(start) ]) + " " + str(vertices [ tuple(end) ]))
 	return vertices, djks(graph, vertices [ tuple(start) ], vertices [ tuple(end) ])
 
 def get_path_in_points(path, vertices, start, end):
@@ -252,7 +242,6 @@ def get_odom_pos():
         rospy.loginfo( "TF Exception" )
         return
 
-    print("Positions "+str(trans[0])+" "+str(trans[1]))
     return Point(trans[0], trans[1], trans[2])
 
 def get_odom_pose():
@@ -262,17 +251,11 @@ def get_odom_pose():
         rospy.loginfo( "TF Exception" )
         return
 
-    print("Poses "+str(quat_to_angle(Quaternion(*rot))))
     return quat_to_angle(Quaternion(*rot))
 
-# def odom_callback(odom_data):
-#     # print("Inside Odometry callback")
-#     global robot_pos, robot_pose 
-#     robot_pos = odom_data.pose.pose.position
-#     robot_pose = odom_data.pose.pose.orientation
 
 def translate_robot(distance):
-    global rate, robot_pos
+    global rate
 
     move_cmd = Twist()
     move_cmd.linear.x = 0.2
@@ -290,12 +273,11 @@ def translate_robot(distance):
 
 
 def rotate_robot(angle, direction):
-    global rate, angle_turned
+    global rate, robot_pose
 
-    print("Rotating by angle "+str(angle))
     move_cmd = Twist()
-    move_cmd.angular.z = direction * 0.05
-    angular_duration = angle / 0.05
+    move_cmd.angular.z = direction * 0.1
+    angular_duration = angle / 0.1
     # Move for a time to turn to the desired angle
     ticks = int(angular_duration * ros_rate)
 
@@ -306,15 +288,15 @@ def rotate_robot(angle, direction):
     # Stop the robot 
     move_cmd = Twist()
     cmd_vel.publish(move_cmd)
-    rospy.sleep(0.25) 
+    rospy.sleep(0.25)
+    robot_pose = get_odom_pose() 
 
     
 def move_robot(points):
 
 	total_dist = 0
 	for i in range( len(points) - 1 ):
-		angle = getAngle( points[i], points[ i+1 ] )
-		print("angle is "+str(angle))
+		angle = getAngle( points[i], points[ i+1 ] ) - robot_pose
 		sign = 1
 		if(angle<0): 
 			sign = -1
@@ -323,7 +305,6 @@ def move_robot(points):
 		dist = getDist(points[i], points[ i+1 ])
 		total_dist += dist
 		translate_robot(dist)
-		rotate_robot(abs(angle), -1 * sign)
 
 
 marker_publisher = rospy.Publisher('visualization_marker', Marker, queue_size=500)
@@ -334,11 +315,11 @@ ros_rate = 50
 ################################
 tf_listener  =  tf.TransformListener()
 odom_frame  =  '/odom'
+robot_pose = 0.0
 
 #Subscribe to scan and odomotry and publish cmd_vel
 
 cmd_vel = rospy.Publisher('/cmd_vel', Twist, queue_size = 2)
-#cmd_vel = rospy.Publisher('/cmd_vel', Twist, queue_size=2)
 rate = rospy.Rate(ros_rate)
 
 try:
@@ -353,18 +334,14 @@ except(tf.Exception,  tf.ConnectivityException,  tf.LookupException):
                             
 obstacles = load_obstacles("../data/world_obstacles.txt")
 goal = load_goal("../data/goal.txt")
-print("goal", goal)
 grown_obstacles = []
-i=0;
-allpoints = list()
-allpoints.append(goal)
-allpoints.append([0,0])
 edges_obs = list()
 for obs in obstacles:
 	l = len(obs)
 	for j in range(len(obs)):
 		edges_obs.append(([obs[j][0]/100, obs[j][1]/100],[obs[(j+1)%l][0]/100, obs[(j+1)%l][1]/100]))
 
+#Growing obstacles
 for obs in obstacles:
 	grown_obstacle = []
 	points = []
@@ -384,6 +361,8 @@ for obs in obstacles:
 
 edges_hull = list()
 vertices_hull = defaultdict(list)
+#Extract vertices and edges of hull
+i = 0
 for obstacle in grown_obstacles:
 	points = []
 	pts = []
@@ -397,6 +376,8 @@ for obstacle in grown_obstacles:
 	for j in range(0,l):
 		edges_hull.append((pts[j],pts[(j+1)%(l)]))
 rospy.sleep(1)  
+
+#Add all possible segments between convex hull vertices of different obstacles.
 all_segments = []
 all_segments.append(([0,0],[int(goal[0])/100,int(goal[1])/100]))
 for k in range(0 , len(obstacles)):
@@ -410,6 +391,7 @@ for k in range(0 , len(obstacles)):
 				for v in vertices_hull[t]:
 					all_segments.append(([x[0]/100,x[1]/100],[v[0]/100,v[1]/100]))
 
+#Check for collision between segment and edges of grown obstacles or normal obstacles
 relevant_segments = list()
 for seg in all_segments:
 	add = True
@@ -421,6 +403,7 @@ for seg in all_segments:
 			add = False
 	if add :
 		relevant_segments.append(seg)
+#Check for collision between edges and edges for when hulls overlap. This makes the case a bit better though still doesn't work in many cases as discussed on Piazza
 for edge in edges_hull:
 	add = True
 	for edge2 in edges_hull:
@@ -431,6 +414,8 @@ for edge in edges_hull:
 			add = False
 	if add :
 		relevant_segments.append(edge)
+
+#publish markers for the segments which can be traversed
 publish_lines(relevant_segments)
 
 start_pt = [0, 0]
