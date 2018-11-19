@@ -62,17 +62,20 @@ if __name__ == "__main__":
                         help="File path for obstacle set")
     parser.add_argument('start_goal_path',
                         help="File path for obstacle set")
+    parser.add_argument('step_size',
+                        help="Step size for each iteration")
     args = parser.parse_args()
 
     fig, ax = plt.subplots()
     path = build_obstacle_course(args.obstacle_path, ax)
     start, goal = add_start_and_goal(args.start_goal_path, ax)
+    step = float(args.step_size)
 
-    rrt = RRT(vertices, start, goal, 200)
+    rrt = RRT(vertices, start, goal, step)
     rrt.grow_tree()
 
-    ax.add_patch(patches.Circle(start, facecolor='xkcd:red'))
-    ax.add_patch(patches.Circle(goal, facecolor='xkcd:green'))
+    ax.add_patch(patches.Circle(start, radius = 10, facecolor='xkcd:red'))
+    ax.add_patch(patches.Circle(goal, radius = 10, facecolor='xkcd:green'))
 
 
     plt.show()

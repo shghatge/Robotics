@@ -65,7 +65,7 @@ class RRT(object):
 			if dist < min_dist:
 				min_dist = dist
 				min_index = i
-
+		# print("min "+str(min_index)+" dist "+str(min_dist))
 		return min_index, min_dist
 
 	def collision_segment(self, p1,p2,p3,p4):
@@ -88,14 +88,29 @@ class RRT(object):
 
 		for i in range( len (self.edges) ):
 
-			if self.collision_segment(p1, p2, self.edges[i][0:2], self.edges[i][2:]) == True:
+			if self.collision_segment(p1, p2, (self.edges[i][0], self.edges[i][1]), (self.edges[i][2], self.edges[i][3])) == True:
 				# print("Collision Detected between " + str([p1,p2])+" and "+str(self.edges[i]))
 				return True		
 		return False
 
+	def collision_detect_num(self, p1, p2):
+
+		num = 0
+		for i in range( len (self.edges) ):
+
+			if self.collision_segment(p1, p2, (self.edges[i][0], self.edges[i][1]), (self.edges[i][2], self.edges[i][3])) == True:
+				# print("Collision Detected between " + str([p1,p2])+" and "+str(self.edges[i]))
+				num += 1		
+		return num
+
 	def is_goal_reached(self, pt):
 
 		if ( self.get_dist(pt, self.goal) < self.step ) and self.collision_detect(pt, self.goal) == False:
+
+			plt.plot([self.goal[0], pt[0]], [self.goal[1], pt[1]], marker = 'o', color = 'xkcd:black')
+			self.nodes_parent.append(len(self.nodes))
+			self.nodes.append(self.goal)
+			self.done = True
 			return True
 		else:
 			return False
@@ -106,91 +121,94 @@ class RRT(object):
 	def pointIsClose(self, p1, p2):
 		return self.isclose(p1[0],p2[0]) and self.isclose(p1[1],p2[1])
 
+	def plot_and_checkGoal(self, pt1, pt2):
+
+		plt.plot([pt1[0], pt2[0]], [pt1[1], pt2[1]], marker = 'o', color = 'xkcd:black')
+		
+		if self.is_goal_reached(pt2):
+			return True
+		else:
+			return False
+
+
 	def grow_to_randq(self, randQ):
+
+		m_size = 15
 		
 		closest_node_index, dist = self.find_closest_node(randQ)
-		if dist < 1:
-			return
 		closest_node = self.nodes[closest_node_index]
+
+		if dist < self.step:
+			return
+
+		# print(randQ)
+
+		# if self.collision_detect_num(randQ, closest_node) % 2 == 1:
+		# 	return
 
 		nQ = [ randQ[0] - closest_node[0], randQ[1] - closest_node[1] ]
 		nQ[0] = nQ[0] / dist
 		nQ[1] = nQ[1] / dist
 
-		if(self.get_dist(randQ, closest_node) < self.step):
+		new_node = [ 0, 0]
+		new_node[0] = closest_node[0] + nQ[0] * self.step
+		new_node[1] = closest_node[1] + nQ[1] * self.step
 
-			if self.collision_detect(randQ, closest_node) == True:
-				return	
+		if self.collision_detect(closest_node, new_node) == True:
+			return
+
+		self.nodes.append(new_node.copy())
+		self.nodes_parent.append( closest_node_index )
+
+		if self.plot_and_checkGoal(closest_node, new_node) == True:
+			return
+
+		prev_node = new_node.copy()
+
+		new_node[0] = new_node[0] + nQ[0] * self.step
+		new_node[1] = new_node[1] + nQ[1] * self.step
 			
-			plt.plot([closest_node[0], randQ[0]], [closest_node[1], randQ[1]], markersize = 3, color = 'xkcd:green')
-			self.nodes_parent.append(len(self.nodes))
-			self.nodes.append(randQ)
-			
-			if self.is_goal_reached(randQ):
-				plt.plot([self.goal[0], randQ[0]], [self.goal[1], randQ[1]], markersize = 3, color = 'xkcd:green')
-				self.nodes_parent.append(len(self.nodes))
-				self.nodes.append(self.goal)
-				self.done = True
-				return
+		while(True):
 
-		else:
+			if(self.get_dist(randQ, prev_node) < self.step):
 
-			new_node = [ 0, 0]
-			new_node[0] = closest_node[0] + nQ[0] * self.step
-			new_node[1] = closest_node[1] + nQ[1] * self.step
-				
-			while(True):
-
-				if self.collision_detect(self.nodes[-1], new_node) == True:
+				if self.collision_detect(prev_node, randQ) == True:
 					return
 
-				plt.plot([self.nodes[-1][0], new_node[0]], [self.nodes[-1][1], new_node[1]], markersize = 3, color = 'xkcd:green')
-				self.nodes_parent.append(len(self.nodes))
+				self.nodes.append(list(randQ).copy())
+				self.nodes_parent.append( len(self.nodes) - 2 )
+
+				if self.plot_and_checkGoal(prev_node, randQ) == True:
+					return
+
+				break
+
+			else:
+
+				if self.collision_detect(new_node, prev_node) == True:
+					return
+
 				self.nodes.append(new_node.copy())
+				self.nodes_parent.append( len(self.nodes) - 2 )
 
-				if self.is_goal_reached(self.nodes[-1]):
-					plt.plot([self.goal[0], self.nodes[-1][0]], [self.goal[1], self.nodes[-1][1]], markersize = 3, color = 'xkcd:green')
-					self.nodes_parent.append(len(self.nodes))
-					self.nodes.append(self.goal)
-					self.done = True
+				if self.plot_and_checkGoal(prev_node, new_node) == True:
 					return
-				# print("append "+str(new_node))
-				
-				if(self.get_dist(randQ, new_node) < self.step):
 
-					if self.collision_detect(self.nodes[-1], new_node) == True:
-						return
+			prev_node = new_node.copy()	
 
-					plt.plot([self.nodes[-1][0], new_node[0]], [self.nodes[-1][1], new_node[1]], markersize = 3, color = 'xkcd:green')
-					self.nodes_parent.append(len(self.nodes))
-					self.nodes.append(new_node.copy())
-
-					if self.is_goal_reached(self.nodes[-1]):
-						plt.plot([self.goal[0], self.nodes[-1][0]], [self.goal[1], self.nodes[-1][1]], markersize = 3, color = 'xkcd:green')
-						self.nodes_parent.append(len(self.nodes))
-						self.nodes.append(self.goal)
-						self.done = True
-						return
-					# print("append "+str(new_node))
-					break
-
-				new_node[0] = new_node[0] + nQ[0] * self.step
-				new_node[1] = new_node[1] + nQ[1] * self.step
+			new_node[0] = new_node[0] + nQ[0] * self.step
+			new_node[1] = new_node[1] + nQ[1] * self.step
+		
 
 
 	def grow_tree(self):
 
 		i = 0
-		while(i < 2000):
+		while(i < 5000):
+			
 			randQ = self.gen_rand()
-			# print(randQ)
-			# print(self.start)
-			# plt.plot(randQ[0], self.start[0], [randQ[1], self.start[1]], marker = 'o', color = 'xkcd:blue')	
-			# print("going into rand "+str(i))
 			self.grow_to_randq( randQ )
-			# print("out of rand")
-			# print(self.nodes)
-			# print(self.nodes_parent)
+
 			if self.done == True:
 				break
 			i += 1
