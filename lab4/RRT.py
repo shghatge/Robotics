@@ -142,10 +142,17 @@ class RRT(object):
 		if dist < self.step:
 			return
 
-		# print(randQ)
+		if(self.get_dist(randQ, closest_node) < self.step):
 
-		# if self.collision_detect_num(randQ, closest_node) % 2 == 1:
-		# 	return
+			if self.collision_detect(closest_node, randQ) == True:
+				return
+
+			self.nodes.append(list(randQ).copy())
+			self.nodes_parent.append( closest_node_index )
+
+			if self.plot_and_checkGoal(closest_node, randQ) == True:
+				return
+
 
 		nQ = [ randQ[0] - closest_node[0], randQ[1] - closest_node[1] ]
 		nQ[0] = nQ[0] / dist
@@ -173,13 +180,13 @@ class RRT(object):
 
 			if(self.get_dist(randQ, prev_node) < self.step):
 
-				if self.collision_detect(prev_node, randQ) == True:
+				if self.collision_detect(prev_node, new_node) == True:
 					return
 
-				self.nodes.append(list(randQ).copy())
+				self.nodes.append(list(new_node).copy())
 				self.nodes_parent.append( len(self.nodes) - 2 )
 
-				if self.plot_and_checkGoal(prev_node, randQ) == True:
+				if self.plot_and_checkGoal(prev_node, new_node) == True:
 					return
 
 				break
@@ -204,7 +211,7 @@ class RRT(object):
 
 		if self.done == False:
 			return
-			
+
 		point = self.nodes[-1]
 		parent_ind = self.nodes_parent[ len(self.nodes) - 1]
 		# parent = self.nodes[parent_ind]
@@ -224,7 +231,7 @@ class RRT(object):
 	def grow_tree(self):
 
 		i = 0
-		while(i < 10000):
+		while(i < 1000000):
 			
 			randQ = self.gen_rand()
 			self.grow_to_randq( randQ )
