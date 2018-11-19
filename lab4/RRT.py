@@ -108,9 +108,10 @@ class RRT(object):
 		if ( self.get_dist(pt, self.goal) < self.step ) and self.collision_detect(pt, self.goal) == False:
 
 			plt.plot([self.goal[0], pt[0]], [self.goal[1], pt[1]], marker = 'o', color = 'xkcd:black')
-			self.nodes_parent.append(len(self.nodes))
 			self.nodes.append(self.goal)
+			self.nodes_parent.append(len(self.nodes) - 2)
 			self.done = True
+
 			return True
 		else:
 			return False
@@ -199,12 +200,31 @@ class RRT(object):
 			new_node[0] = new_node[0] + nQ[0] * self.step
 			new_node[1] = new_node[1] + nQ[1] * self.step
 		
+	def draw_path(self):
+
+		if self.done == False:
+			return
+			
+		point = self.nodes[-1]
+		parent_ind = self.nodes_parent[ len(self.nodes) - 1]
+		# parent = self.nodes[parent_ind]
+
+		while(parent_ind != -1):
+
+			# print("len "+str(len(self.nodes))+" "+str(parent_ind))
+			parent = self.nodes[parent_ind]
+			plt.plot([point[0], parent[0]], [point[1], parent[1]], marker = 'o', color = 'xkcd:green')
+			parent_ind = self.nodes_parent[parent_ind]
+			point = list(parent).copy()
+			
+
+			
 
 
 	def grow_tree(self):
 
 		i = 0
-		while(i < 5000):
+		while(i < 10000):
 			
 			randQ = self.gen_rand()
 			self.grow_to_randq( randQ )
@@ -212,6 +232,8 @@ class RRT(object):
 			if self.done == True:
 				break
 			i += 1
+
+		self.draw_path()
 
 
 
