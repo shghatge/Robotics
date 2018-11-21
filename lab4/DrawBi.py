@@ -85,10 +85,11 @@ if __name__ == "__main__":
             break
         randQ = gen_rand()
         rrt2.goal = rrt1.nodes[-1]
-        rrt2.grow_tree(randQ)
+        rrt2.grow_tree(rrt1.nodes[-1])
         if rrt2.done == True:
             break
         rrt1.goal = rrt2.nodes[-1]
+        rrt1, rrt2 = rrt2, rrt1
         i += 1
     rrt1.draw_path()
     ax.add_patch(patches.Circle(start, radius = 10, facecolor='xkcd:red'))
