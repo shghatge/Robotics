@@ -71,11 +71,13 @@ if __name__ == "__main__":
     start, goal = add_start_and_goal(args.start_goal_path, ax)
     step = float(args.step_size)
 
+    ax.add_patch(patches.Circle(start, radius = 10, facecolor='xkcd:red'))
+    ax.add_patch(patches.Circle(goal, radius = 10, facecolor='xkcd:green'))
+
     rrt = RRT(vertices, start, goal, step)
     rrt.grow_tree()
 
-    ax.add_patch(patches.Circle(start, radius = 10, facecolor='xkcd:red'))
-    ax.add_patch(patches.Circle(goal, radius = 10, facecolor='xkcd:green'))
+    
 
 
     plt.show()

@@ -125,7 +125,7 @@ class RRT(object):
         def plot_and_checkGoal(self, pt1, pt2):
 
                 plt.plot([pt1[0], pt2[0]], [pt1[1], pt2[1]], marker = 'o', color = 'xkcd:black')
-                plt.pause(.001)
+                plt.pause(.01)
                 if self.is_goal_reached(pt2):
                         return True
                 else:
@@ -220,6 +220,7 @@ class RRT(object):
                         # print("len "+str(len(self.nodes))+" "+str(parent_ind))
                         parent = self.nodes[parent_ind]
                         plt.plot([point[0], parent[0]], [point[1], parent[1]], marker = 'o', color = 'xkcd:green')
+                        plt.pause(.01)
                         parent_ind = self.nodes_parent[parent_ind]
                         point = list(parent).copy()
                         
@@ -238,6 +239,7 @@ class RRT(object):
                                 break
                         i += 1
                 self.draw_path()
+                plt.pause(10)
 
 
 
