@@ -92,6 +92,7 @@ if __name__ == "__main__":
         rrt1, rrt2 = rrt2, rrt1
         i += 1
     rrt1.draw_path()
+    plt.pause(10)
     ax.add_patch(patches.Circle(start, radius = 10, facecolor='xkcd:red'))
     ax.add_patch(patches.Circle(goal, radius = 10, facecolor='xkcd:green'))
 

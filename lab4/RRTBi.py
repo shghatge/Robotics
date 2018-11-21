@@ -216,6 +216,7 @@ class RRT(object):
                         # print("len "+str(len(self.nodes))+" "+str(parent_ind))
                         parent = self.nodes[parent_ind]
                         plt.plot([point[0], parent[0]], [point[1], parent[1]], marker = 'o', color = 'xkcd:green')
+                        plt.pause(.01)
                         parent_ind = self.nodes_parent[parent_ind]
                         point = list(parent).copy()
                         
@@ -227,6 +228,7 @@ class RRT(object):
                 plt.ion()
                 plt.show()
                 self.grow_to_randq(randQ)
+                
 
 
 
