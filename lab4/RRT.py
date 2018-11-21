@@ -225,6 +225,7 @@ class RRT(object):
                         plt.pause(.01)
                         parent_ind = self.nodes_parent[parent_ind]
                         point = list(parent).copy()
+                plt.text(200, 200, "Path Found !", fontsize=12, bbox=dict(facecolor='green', alpha=0.5))
                 plt.show(block=True)        
 
                         
@@ -234,17 +235,20 @@ class RRT(object):
                 plt.ion()
                 plt.show()
                 i = 0
-                while(i < 1000000):
+                while(i < 100000):
                         
                         randQ = self.gen_rand()
                         self.grow_to_randq( randQ )
 
                         if self.done == True:
+                                self.draw_path()
                                 break
                         i += 1
 
-                self.draw_path()
-                plt.pause(10)
+                if self.done == False:
+                        plt.text(200, 200, "Path Not Found !", fontsize=12, bbox=dict(facecolor='red'))
+                        plt.show(block=True)
+                # plt.pause(10)
 
 
 
