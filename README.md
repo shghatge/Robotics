@@ -7,7 +7,7 @@
 ```python Draw.py obstacles.txt goal.txt 20```
 4. The third parameter is the step size
 5. For bidirectional RRT run following command
-```python Draw.py obstacles.txt goal.txt 20```
+```python DrawBi.py obstacles.txt goal.txt 20```
 6. Close the plot window to exit program
 
 #### Method ####
