@@ -108,7 +108,7 @@ class RRT(object):
                 if ( self.get_dist(pt, self.goal) < self.step ) and self.collision_detect(pt, self.goal) == False:
 
                         plt.plot([self.goal[0], pt[0]], [self.goal[1], pt[1]], marker = 'o', color = 'xkcd:black')
-                        plt.pause(.001)
+                        plt.pause(0.001)
                         self.nodes.append(self.goal)
                         self.nodes_parent.append(len(self.nodes) - 2)
                         self.done = True
@@ -126,7 +126,7 @@ class RRT(object):
         def plot_and_checkGoal(self, pt1, pt2):
 
                 plt.plot([pt1[0], pt2[0]], [pt1[1], pt2[1]], marker = 'o', color = 'xkcd:black')
-                plt.pause(.001)
+                plt.pause(0.001)
                 if self.is_goal_reached(pt2):
                         return True
                 else:
@@ -212,6 +212,7 @@ class RRT(object):
 
                 if self.done == False:
                         return
+
                 point = self.nodes[-1]
                 parent_ind = self.nodes_parent[ len(self.nodes) - 1]
                 # parent = self.nodes[parent_ind]
@@ -221,6 +222,7 @@ class RRT(object):
                         # print("len "+str(len(self.nodes))+" "+str(parent_ind))
                         parent = self.nodes[parent_ind]
                         plt.plot([point[0], parent[0]], [point[1], parent[1]], marker = 'o', color = 'xkcd:green')
+                        plt.pause(0.001)
                         parent_ind = self.nodes_parent[parent_ind]
                         point = list(parent).copy()
                         
@@ -233,11 +235,14 @@ class RRT(object):
                 plt.show()
                 i = 0
                 while(i < 1000000):
+                        
                         randQ = self.gen_rand()
-                        self.grow_to_randq(randQ)
+                        self.grow_to_randq( randQ )
+
                         if self.done == True:
                                 break
                         i += 1
+
                 self.draw_path()
 
 
