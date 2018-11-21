@@ -11,6 +11,7 @@
 6. Close the plot window to exit program
 
 #### Method ####
+#####Single RRT#####
 Draw.py:
 1) Main method calls growTree method on the RRT
 RRT.py:
