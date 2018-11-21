@@ -75,8 +75,9 @@ if __name__ == "__main__":
     start, goal = add_start_and_goal(args.start_goal_path, ax)
     step = float(args.step_size)
 
-    rrt1 = RRT(vertices, start, goal, step, '#894585')
-    rrt2 = RRT(vertices, goal, start, step, '#dd85d7')
+    rrt1 = RRT(vertices, start, goal, step, '#894585', None)
+    rrt2 = RRT(vertices, goal, start, step, '#dd85d7', rrt1)
+    rrt1.rrt2 = rrt2
     i = 0
     plt.ion()
     plt.show()
@@ -85,18 +86,14 @@ if __name__ == "__main__":
         rrt1.grow_tree(randQ)
         if rrt1.done == True:
             break
-        plt.pause(.001)
         randQ = gen_rand()
         rrt2.goal = rrt1.nodes[-1]
         rrt2.grow_tree(rrt1.nodes[-1])
-        plt.pause(.001)
         if rrt2.done == True:
             break
         rrt1.goal = rrt2.nodes[-1]
         rrt1, rrt2 = rrt2, rrt1
         i += 1
-    rrt1.draw_path()
-    rrt2.draw_path()
     ax.add_patch(patches.Circle(start, radius = 10, facecolor='xkcd:red'))
     ax.add_patch(patches.Circle(goal, radius = 10, facecolor='xkcd:green'))
 

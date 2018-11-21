@@ -9,7 +9,7 @@ import random, math
 
 class RRT(object):
 
-        def __init__(self, vertices, start, goal, step, color):
+        def __init__(self, vertices, start, goal, step, color,rrt2):
                 self.vertices = vertices
                 self.goal = goal
                 self.start = start
@@ -21,7 +21,7 @@ class RRT(object):
                 self.nodes_parent.append(-1)
                 self.done = False
                 self.node_color = color
-
+                self.rrt2 = rrt2
                 self.load_edges(vertices)
 
         def load_edges(self, verts):
@@ -209,6 +209,7 @@ class RRT(object):
 
                 if self.done == False:
                         return
+
                 point = self.nodes[-1]
                 parent_ind = self.nodes_parent[ len(self.nodes) - 1]
                 # parent = self.nodes[parent_ind]
@@ -218,16 +219,29 @@ class RRT(object):
                         # print("len "+str(len(self.nodes))+" "+str(parent_ind))
                         parent = self.nodes[parent_ind]
                         plt.plot([point[0], parent[0]], [point[1], parent[1]], marker = 'o', color = 'xkcd:green')
-                        plt.pause(.001)
+                        plt.pause(0.001)
                         parent_ind = self.nodes_parent[parent_ind]
                         point = list(parent).copy()
-                        
+                point = self.rrt2.nodes[-1]
+                parent_ind = self.rrt2.nodes_parent[ len(self.rrt2.nodes) - 1]
+                # parent = self.nodes[parent_ind]
 
-                        
+                while(parent_ind != -1):
 
-
+                        # print("len "+str(len(self.nodes))+" "+str(parent_ind))
+                        parent = self.rrt2.nodes[parent_ind]
+                        plt.plot([point[0], parent[0]], [point[1], parent[1]], marker = 'o', color = 'xkcd:green')
+                        plt.pause(0.001)
+                        parent_ind = self.rrt2.nodes_parent[parent_ind]
+                        point = list(parent).copy()
+                plt.show(block=True)
+                
         def grow_tree(self, randQ):
+                plt.ion()
+                plt.show()
                 self.grow_to_randq(randQ)
+                if self.done == True:
+                        self.draw_path()
 
 
 

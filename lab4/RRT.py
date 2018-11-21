@@ -225,7 +225,7 @@ class RRT(object):
                         plt.pause(0.001)
                         parent_ind = self.nodes_parent[parent_ind]
                         point = list(parent).copy()
-                        
+                plt.show(block=True)        
 
                         
 
