@@ -19,6 +19,7 @@ RRT.py:
 3) grow_to_randq: Expands the tree till collision is detected or goal is reached in given direction
 4) plot_and_check_goal : plots new node and checks if it is goal
 5) collision_detect : detects the collision between two line segments.
+#####Bidirectional#####
 DrawBi.py:
 1) Main method of DrawBi has a loop for 100000 interations. Each iteration grows one tree in one direction and sets the new node as the goal for other tree
 RRTBi.py:
