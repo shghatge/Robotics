@@ -238,8 +238,6 @@ class RRT(object):
                 while(i < 100000):
                         
                         randQ = self.gen_rand()
-                        if(i%7==0):
-                                randQ = self.goal
                         self.grow_to_randq( randQ )
 
                         if self.done == True:
