@@ -81,19 +81,24 @@ if __name__ == "__main__":
     i = 0
     plt.ion()
     plt.show()
-    while(i<10000):
+    while(i<100000):
         randQ = gen_rand()
         rrt1.grow_tree(randQ)
         if rrt1.done == True:
             break
         randQ = gen_rand()
         rrt2.goal = rrt1.nodes[-1]
-        rrt2.grow_tree(rrt1.nodes[-1])
+        if(i%7 != 0):
+            randQ = rrt2.goal
+        rrt2.grow_tree(randQ)
         if rrt2.done == True:
             break
         rrt1.goal = rrt2.nodes[-1]
         rrt1, rrt2 = rrt2, rrt1
         i += 1
+    if(rrt1.done==False and rrt2.done==False):
+      plt.text(200, 200, "Path Not Found !", fontsize=12, bbox=dict(facecolor='red'))
+      plt.show(block=True)        
     ax.add_patch(patches.Circle(start, radius = 10, facecolor='xkcd:red'))
     ax.add_patch(patches.Circle(goal, radius = 10, facecolor='xkcd:green'))
 

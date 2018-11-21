@@ -234,6 +234,7 @@ class RRT(object):
                         plt.pause(0.001)
                         parent_ind = self.rrt2.nodes_parent[parent_ind]
                         point = list(parent).copy()
+                plt.text(200, 200, "Path Found !", fontsize=12, bbox=dict(facecolor='green', alpha=0.5))
                 plt.show(block=True)
                 
         def grow_tree(self, randQ):
