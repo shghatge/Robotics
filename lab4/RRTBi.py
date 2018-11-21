@@ -47,10 +47,6 @@ class RRT(object):
                                 self.edges.append( [ verts[i][0], verts[i][1], verts[i+1][0], verts[i+1][1] ] )
 
 
-        def gen_rand(self):
-                x = random.randint(0, 600)
-                y = random.randint(0, 600)
-                return ( x, y)
 
         def get_dist(self, pt1, pt2):
                 return math.sqrt( (pt1[0] - pt2[0]) * (pt1[0] - pt2[0]) + (pt1[1] - pt2[1]) * (pt1[1] - pt2[1])  )
@@ -227,18 +223,10 @@ class RRT(object):
                         
 
 
-        def grow_tree(self):
+        def grow_tree(self, randQ):
                 plt.ion()
                 plt.show()
-                i = 0
-                while(i < 1000000):
-                        randQ = self.gen_rand()
-                        self.grow_to_randq(randQ)
-                        if self.done == True:
-                                break
-                        i += 1
-                self.draw_path()
-
+                self.grow_to_randq(randQ)
 
 
 
