@@ -11,22 +11,24 @@
 6. Close the plot window to exit program
 
 #### Method ####
+-Single RRT
 Draw.py:
-1) Main method calls growTree method on the RRT
+a) Main method calls growTree method on the RRT
 RRT.py:
-1)GrowTree : This method has a loop for maximum 100000 iterations. Each iteration grows the tree in a random direction till non collision. If goal is reached calls DrawPth
-2)DrawPath : Draws path from goal to start node by calling parents
-3) grow_to_randq: Expands the tree till collision is detected or goal is reached in given direction
-4) plot_and_check_goal : plots new node and checks if it is goal
-5) collision_detect : detects the collision between two line segments.
+- GrowTree : This method has a loop for maximum 100000 iterations. Each iteration grows the tree in a random direction till non collision. If goal is reached calls DrawPth
+- DrawPath : Draws path from goal to start node by calling parents
+- grow_to_randq: Expands the tree till collision is detected or goal is reached in given direction
+- plot_and_check_goal : plots new node and checks if it is goal
+- collision_detect : detects the collision between two line segments.
+
 DrawBi.py:
-1) Main method of DrawBi has a loop for 100000 interations. Each iteration grows one tree in one direction and sets the new node as the goal for other tree
+a) Main method of DrawBi has a loop for 100000 interations. Each iteration grows one tree in one direction and sets the new node as the goal for other tree
 RRTBi.py:
-1)GrowTree : Here this method only expands one tree till no collision in oner direction by calling grow_to_randQ. If goal is reached, calls draw_path function
-2)DrawPath : Here DrawPath draws the path from latest nodes of both trees to their respective goal by ploting the nodes in green color
-3) grow_to_randq: Expands the tree till collision is detected or goal is reached in given direction
-4) plot_and_check_goal : plots new node and checks if it is goal
-5) collision_detect : detects the collision between two line segments.
+- GrowTree : Here this method only expands one tree till no collision in oner direction by calling grow_to_randQ. If goal is reached, calls draw_path function
+- DrawPath : Here DrawPath draws the path from latest nodes of both trees to their respective goal by ploting the nodes in green color
+- grow_to_randq: Expands the tree till collision is detected or goal is reached in given direction
+- plot_and_check_goal : plots new node and checks if it is goal
+- collision_detect : detects the collision between two line segments.
 
 
 #### Video Link ####
