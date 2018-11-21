@@ -9,7 +9,7 @@ import random, math
 
 class RRT(object):
 
-        def __init__(self, vertices, start, goal, step):
+        def __init__(self, vertices, start, goal, step, color):
                 self.vertices = vertices
                 self.goal = goal
                 self.start = start
@@ -20,6 +20,7 @@ class RRT(object):
                 self.nodes.append(start)
                 self.nodes_parent.append(-1)
                 self.done = False
+                self.node_color = color
 
                 self.load_edges(vertices)
 
@@ -103,7 +104,8 @@ class RRT(object):
 
                 if ( self.get_dist(pt, self.goal) < self.step ) and self.collision_detect(pt, self.goal) == False:
 
-                        plt.plot([self.goal[0], pt[0]], [self.goal[1], pt[1]], marker = 'o', color = 'xkcd:black')
+                        plt.plot([self.goal[0], pt[0]], [self.goal[1], pt[1]], marker = 'o', color = self.node_color)
+                        plt.pause(.001)
                         self.nodes.append(self.goal)
                         self.nodes_parent.append(len(self.nodes) - 2)
                         self.done = True
@@ -120,7 +122,7 @@ class RRT(object):
 
         def plot_and_checkGoal(self, pt1, pt2):
 
-                plt.plot([pt1[0], pt2[0]], [pt1[1], pt2[1]], marker = 'o', color = 'xkcd:black')
+                plt.plot([pt1[0], pt2[0]], [pt1[1], pt2[1]], marker = 'o', color = self.node_color)
                 plt.pause(.001)
                 if self.is_goal_reached(pt2):
                         return True
@@ -225,8 +227,6 @@ class RRT(object):
 
 
         def grow_tree(self, randQ):
-                plt.ion()
-                plt.show()
                 self.grow_to_randq(randQ)
                 
 

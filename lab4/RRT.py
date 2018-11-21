@@ -108,6 +108,7 @@ class RRT(object):
                 if ( self.get_dist(pt, self.goal) < self.step ) and self.collision_detect(pt, self.goal) == False:
 
                         plt.plot([self.goal[0], pt[0]], [self.goal[1], pt[1]], marker = 'o', color = 'xkcd:black')
+                        plt.pause(.001)
                         self.nodes.append(self.goal)
                         self.nodes_parent.append(len(self.nodes) - 2)
                         self.done = True
