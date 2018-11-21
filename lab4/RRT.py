@@ -244,7 +244,6 @@ class RRT(object):
                         i += 1
 
                 self.draw_path()
-                plt.pause(10)
 
 
 
