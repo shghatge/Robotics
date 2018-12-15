@@ -4,6 +4,12 @@ import rospy, cv2, cv_bridge, numpy
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist
 from math import pi
+import tf
+import math
+from geometry_msgs.msg import Point,  Quaternion
+from sensor_msgs.msg import LaserScan
+from nav_msgs.msg import Odometry
+from rbx1_nav.transform_utils import quat_to_angle, normalize_angle
 
 class Follower:
   def __init__(self):
@@ -32,6 +38,24 @@ class Follower:
       self.cmd_vel_pub.publish(move_cmd)
       rospy.signal_shutdown("Reached Red")
 
+  def rotate_robot(self, angle, direction):
+
+      #angle_turned += ((direction) * angle)
+      print("Rotating by angle "+str(angle))
+      move_cmd = Twist()
+      move_cmd.angular.z = direction * 1
+      angular_duration = angle / 1
+      # Move for a time to turn to the desired angle
+      ticks = int(angular_duration * 50)
+
+      for t in range(ticks):
+          cmd_vel.publish(move_cmd)
+          self.rate.sleep()
+
+      # Stop the robot 
+      move_cmd = Twist()
+      cmd_vel.publish(move_cmd)
+  
   def getDist(self, pt1, pt2):
 
     distance = math.sqrt( ( pt1[0] - pt2[0] ) ** 2 + ( pt1[1] - pt2[1] ) ** 2) 
@@ -67,7 +91,7 @@ class Follower:
 
   def final_goto_goal(self):
 
-    self.translate_robot(0)
+    # self.translate_robot(0)
     robot_pose = self.get_odom_pose()
     robot_pos = self.get_odom_pos()
     angle = self.getAngle( (robot_pos.x, robot_pos.y), (-2.362, -1.1715) ) - robot_pose
@@ -138,6 +162,21 @@ class Follower:
     cv2.waitKey(3)
 
 rospy.init_node('follower',disable_signals=True)
+tf_listener  =  tf.TransformListener()
+odom_frame  =  '/odom'
+robot_pose = 0.0
+
+#Subscribe to scan and odomotry and publish cmd_vel
+
+cmd_vel = rospy.Publisher('/cmd_vel', Twist, queue_size = 2)
+rate = rospy.Rate(50)
+
+try:
+    tf_listener.waitForTransform( odom_frame,  '/base_footprint' ,  rospy.Time(),  rospy.Duration( 1.0 ))
+    base_frame  =  '/base_footprint'
+except(tf.Exception,  tf.ConnectivityException,  tf.LookupException):
+    rospy.loginfo( "Cannot find transform between /odom and /base_link or /base_footprint" )
+    rospy.signal_shutdown( "tf Exception" )
 follower = Follower()
 rospy.spin()
 # END ALL

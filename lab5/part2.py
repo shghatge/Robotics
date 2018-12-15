@@ -172,6 +172,21 @@ class Follower:
     cv2.waitKey(3)
 
 rospy.init_node('follower',disable_signals=True)
+tf_listener  =  tf.TransformListener()
+odom_frame  =  '/odom'
+robot_pose = 0.0
+
+#Subscribe to scan and odomotry and publish cmd_vel
+
+cmd_vel = rospy.Publisher('/cmd_vel', Twist, queue_size = 2)
+rate = rospy.Rate(50)
+
+try:
+    tf_listener.waitForTransform( odom_frame,  '/base_footprint' ,  rospy.Time(),  rospy.Duration( 1.0 ))
+    base_frame  =  '/base_footprint'
+except(tf.Exception,  tf.ConnectivityException,  tf.LookupException):
+    rospy.loginfo( "Cannot find transform between /odom and /base_link or /base_footprint" )
+    rospy.signal_shutdown( "tf Exception" )
 follower = Follower()
 rospy.spin()
 # END ALL
