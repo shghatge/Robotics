@@ -64,7 +64,6 @@ class Follower:
       contours2,h2 = cv2.findContours(thresh2,1,2)
       ret, thresh = cv2.threshold(mask4,127,255,1)
       contours,h = cv2.findContours(thresh1,1,2)
-      print(len(contours))
       for cnt in contours:
         approx = cv2.approxPolyDP(cnt,0.01*cv2.arcLength(cnt,True),True)
         if len(approx)>14:
