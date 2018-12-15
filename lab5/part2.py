@@ -4,6 +4,12 @@ import rospy, cv2, cv_bridge, numpy
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist
 from math import pi
+import tf
+import math
+from geometry_msgs.msg import Point,  Quaternion
+from sensor_msgs.msg import LaserScan
+from nav_msgs.msg import Odometry
+from rbx1_nav.transform_utils import quat_to_angle, normalize_angle
 
 class Follower:
   def __init__(self):
@@ -51,6 +57,54 @@ class Follower:
       move_cmd = Twist()
       cmd_vel.publish(move_cmd)
 
+  def getDist(self, pt1, pt2):  
+
+    distance = math.sqrt( ( pt1[0] - pt2[0] ) ** 2 + ( pt1[1] - pt2[1] ) ** 2) 
+    return distance
+
+  def getAngle(self, pt1, pt2):
+
+    if( ( pt1[0] - pt2[0] ) == 0):
+      angle = math.pi / 2
+    else:
+      angle = math.atan( ( pt1[1] - pt2[1] ) / ( pt1[0] - pt2[0] ) );
+
+    return angle
+
+  def get_odom_pos(self):
+    try:
+        trans, rot = tf_listener.lookupTransform( odom_frame, base_frame, rospy.Time(0) )
+    except  (tf.Exception,  tf.ConnectivityException,  tf.LookupException):
+        rospy.loginfo( "TF Exception" )
+        return
+
+    print("Positions "+str(trans[0])+" "+str(trans[1]))
+    return Point(trans[0], trans[1], trans[2])
+
+  def get_odom_pose(self):
+    try:
+        trans, rot = tf_listener.lookupTransform( odom_frame, base_frame, rospy.Time(0) )
+    except  (tf.Exception,  tf.ConnectivityException,  tf.LookupException):
+        rospy.loginfo( "TF Exception" )
+        return
+    print("pose")
+    return quat_to_angle(Quaternion(*rot))
+
+  def final_goto_goal(self):
+
+    self.translate_robot(0)
+    robot_pose = self.get_odom_pose()
+    robot_pos = self.get_odom_pos()
+    angle = self.getAngle( (robot_pos.x, robot_pos.y), (-2.362, -1.1715) ) - robot_pose
+    sign = 1
+    if(angle<0): 
+      sign = -1
+    self.rotate_robot(abs(angle), sign)
+    # rospy.sleep(0.1)
+    dist = self.getDist( (robot_pos.x, robot_pos.y), (-2.362, -1.1715))
+    # total_dist += dist
+    self.translate_robot(dist)
+    self.translate_robot(0)
 
   def image_callback(self, msg):
     global last
@@ -100,8 +154,8 @@ class Follower:
       cy4 = int(M4['m01']/M4['m00'])
       self.twist.linear.x = 0.2
       self.cmd_vel_pub.publish(self.twist)
-      if(cy4>378):
-        self.translate_robot(0.4)
+      if(cy4>375):
+        self.final_goto_goal()
         
     M = cv2.moments(mask)
     if M['m00'] > 0 :      

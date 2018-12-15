@@ -32,6 +32,55 @@ class Follower:
       self.cmd_vel_pub.publish(move_cmd)
       rospy.signal_shutdown("Reached Red")
 
+  def getDist(self, pt1, pt2):
+
+    distance = math.sqrt( ( pt1[0] - pt2[0] ) ** 2 + ( pt1[1] - pt2[1] ) ** 2) 
+    return distance
+
+  def getAngle(self, pt1, pt2):
+
+    if( ( pt1[0] - pt2[0] ) == 0):
+      angle = math.pi / 2
+    else:
+      angle = math.atan( ( pt1[1] - pt2[1] ) / ( pt1[0] - pt2[0] ) );
+
+    return angle
+
+  def get_odom_pos(self):
+    try:
+        trans, rot = tf_listener.lookupTransform( odom_frame, base_frame, rospy.Time(0) )
+    except  (tf.Exception,  tf.ConnectivityException,  tf.LookupException):
+        rospy.loginfo( "TF Exception" )
+        return
+
+    print("Positions "+str(trans[0])+" "+str(trans[1]))
+    return Point(trans[0], trans[1], trans[2])
+
+  def get_odom_pose(self):
+    try:
+        trans, rot = tf_listener.lookupTransform( odom_frame, base_frame, rospy.Time(0) )
+    except  (tf.Exception,  tf.ConnectivityException,  tf.LookupException):
+        rospy.loginfo( "TF Exception" )
+        return
+    print("pose")
+    return quat_to_angle(Quaternion(*rot))
+
+  def final_goto_goal(self):
+
+    self.translate_robot(0)
+    robot_pose = self.get_odom_pose()
+    robot_pos = self.get_odom_pos()
+    angle = self.getAngle( (robot_pos.x, robot_pos.y), (-2.362, -1.1715) ) - robot_pose
+    sign = 1
+    if(angle<0): 
+      sign = -1
+    self.rotate_robot(abs(angle), sign)
+    # rospy.sleep(0.1)
+    dist = self.getDist( (robot_pos.x, robot_pos.y), (-2.362, -1.1715))
+    # total_dist += dist
+    self.translate_robot(dist)
+    self.translate_robot(0)
+
 
   def image_callback(self, msg):
     global last
@@ -67,7 +116,7 @@ class Follower:
       for cnt in contours:
         approx = cv2.approxPolyDP(cnt,0.01*cv2.arcLength(cnt,True),True)
         if len(approx)>14:
-          self.translate_robot(1.36)
+          self.final_goto_goal()
       if(len(contours2) > len(contours1)):
         #mask left
         mask[search_top:search_bot, 0:w/2] = 0
